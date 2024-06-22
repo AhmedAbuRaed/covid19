@@ -7,6 +7,11 @@ import requests
 from dash import Dash, html, dcc, Output, Input, State
 from io import StringIO
 
+app = Dash(__name__)
+
+# Global variable to hold custom_node_text
+custom_node_text = []
+
 
 # Function to read a file from GitHub
 def read_github_file(url):
@@ -32,6 +37,7 @@ def load_topics(region):
 
 # Function to create network graph
 def create_network_graph(year_list, similarity_csv_url):
+    global custom_node_text
     csv_content = read_github_file(similarity_csv_url)
     df = pd.read_csv(StringIO(csv_content), names=['Month', 'TopicA', 'TopicB', 'similarity'])
 
@@ -135,10 +141,9 @@ def create_network_graph(year_list, similarity_csv_url):
         ),
     )
 
-    return fig, G, pos, custom_node_text, edge_thickness
+    return fig, G, pos, edge_thickness
 
 
-app = Dash(__name__)
 app.layout = html.Div([
     html.H1("Interactive Network Graph of Topics"),
     dcc.Dropdown(
@@ -167,7 +172,7 @@ def update_graph(region):
         similarity_csv = 'https://raw.githubusercontent.com/AhmedAbuRaed/covid19/main/visualization/us_topics_similaritiesWord2VecCosine.csv'
     else:
         similarity_csv = 'https://raw.githubusercontent.com/AhmedAbuRaed/covid19/main/visualization/EU_UK_topics_similaritiesWord2VecCosine.csv'
-    fig, G, pos, custom_node_text, edge_thickness = create_network_graph(year_list, similarity_csv)
+    fig, G, pos, edge_thickness = create_network_graph(year_list, similarity_csv)
     return fig
 
 
