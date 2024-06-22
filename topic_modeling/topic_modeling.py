@@ -10,7 +10,7 @@ import operator
 
 def get_texts(input_file):
     texts = []
-    with open(input_file) as rf:
+    with open(input_file, encoding='utf-8') as rf:
         for line in rf:
             texts.append(line.strip())
     print(len(texts))
@@ -108,7 +108,8 @@ def load(texts, num_topics, input_name, method='NMF'):
     display_documents(texts, model, 3, voca, method, output_file)
 
 if __name__ == '__main__':
-    input_file = 'canada_us.txt'
+    #input_file = 'canada_us.txt'
+    input_file = 'canada_clean.txt'
     num_topics = int(sys.argv[1]) # 20
     method = sys.argv[2] #'LDA', 'NMF'
     texts = get_texts(input_file)

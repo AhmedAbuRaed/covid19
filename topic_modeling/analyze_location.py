@@ -72,7 +72,7 @@ if __name__ == '__main__':
     method = 'LDA'
     model_loc = 'canada_us'
     model_file = '%s_%s_20.model' % (model_loc, method) # model could be different from input e.g., doesn't need to be canada
-    input_num = 5 # 5 files
+    input_num = 1 # 5 files
     output_file = 'loc_%s.csv' % input_loc 
     run(input_prefix, input_num, method, model_file, output_file)
 

@@ -6,11 +6,11 @@ import pickle
 import preprocessor as p
 
 def get_texts(input_file, output_file):
-    with open(input_file, 'r') as rf, open(output_file, 'w') as wf:
+    with open(input_file, 'r', encoding='utf8') as rf, open(output_file, 'w', encoding='utf8') as wf:
         p.set_options(p.OPT.URL, p.OPT.RESERVED)
         for line in rf:
             data_json = json.loads(line)
-            text = data_json['full_text']
+            text = data_json['text']
             clean_text = p.clean(text)
             wf.write(clean_text + '\n')
     

@@ -4,6 +4,45 @@ from pathlib import Path
 import csv
 import sys
 import pickle
+from geopy.geocoders import Nominatim
+from geopy.exc import GeocoderTimedOut, GeocoderUnavailable
+
+
+def get_country(users_file_path, user_id):
+    keys = ['aaburaed', 'ahmed.aburaed', 'ahmedaburaed', 'aburaedahmed']
+
+    with open(users_file_path) as rf:
+        for line in rf:
+            data_json = json.loads(line)
+            if data_json['id'] == user_id:
+                if 'location' in data_json:
+                    location = data_json['location']
+                    geolocator = Nominatim(user_agent="covid19")
+                    try:
+                        g = geolocator.geocode(location, addressdetails=True)
+                        if g is not None and g.raw is not None and 'address' in g.raw and 'country' in g.raw['address']:
+                            # time.sleep(1)
+                            return g.raw['address']['country']
+                        else:
+                            return -1
+                    except GeocoderTimedOut as e:
+                        print(location)
+                    except GeocoderUnavailable as e:
+                        print(location)
+                    except BaseException as error:
+                        print('An exception occurred: {}'.format(error))
+                else:
+                    return -1
+    return -1
+
+
+def get_user_id(tweet):
+    data_json = json.loads(tweet)
+    if 'author_id' in data_json:
+        return data_json['author_id']
+    else:
+        return -1
+
 
 def parse(input_file):
     data = []
@@ -12,7 +51,6 @@ def parse(input_file):
             data_json = json.loads(line)
             data.append(data_json)
     return data
-
 
 
 def get_hashtag_freq(data):
@@ -113,48 +151,43 @@ def get_word_freq(data):
 
 def select_canada(path, country_dic, city_dic, wf, cnt_total):
     print(path.name)
-    with gzip.open(path, 'rb') as rf:
+    with open(path, 'r', encoding='utf-8') as rf:
         for line in rf:
             cnt_total += 1
             data_json = json.loads(line)
-            if data_json['place'] == None:
+            user_id = get_user_id(line)
+            users_path = str(path)[:-4] + '.user.txt'
+            country = get_country(users_path, user_id)
+            if country is None or country == -1:
                 continue
-            country = data_json['place']['country']
+
             if country in country_dic:
                 country_dic[country] += 1
             else:
                 country_dic[country] = 1
             if country == 'United States':
-                #print(data_json['place'])
-                wf.write(line.decode('utf-8'))
-                if data_json['place']['place_type'] == 'city':
-                    city = data_json['place']['name']
-                    if city in city_dic:
-                        city_dic[city] += 1
-                    else:
-                        city_dic[city] = 1
-                else:
-                    print(data_json['place']['place_type'])
+                # print(data_json['place'])
+                wf.write(line)
     return cnt_total
 
-def get_canada(data_dirs, output_file):
+def get_US(data_dirs, output_file):
     cnt_total = 0
     country_dic = {}
     city_dic = {} # canada city
     with open(output_file, 'w') as wf:
         for data_dir in data_dirs:
             for path in Path(data_dir).iterdir():
-                if path.name.endswith('.jsonl.gz'):
-                    cnt_total = select_canada(path, 
+                if not str(path).endswith('.user.txt'):
+                    cnt_total = select_canada(path,
                         country_dic, city_dic, wf, cnt_total)
     print(country_dic)
     print(city_dic)
     print(cnt_total)
 
 if __name__ == '__main__':
-    data_dirs = ['2020-01', '2020-02', '2020-03', 
-            '2020-04', '2020-05'] 
+    data_dirs = ['2021/1', '2021/2', '2021/3', '2021/4', '2021/5', '2021/6', '2021/7', '2021/8', '2021/9', '2021/10',
+                 '2021/11', '2021/12']
     month_index = int(sys.argv[1])
     month = [data_dirs[month_index]]
     output_file = 'tweets_us_%d.txt' % month_index
-    get_canada(month, output_file)
+    get_US(month, output_file)

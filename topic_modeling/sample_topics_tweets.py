@@ -54,6 +54,32 @@ def binning_weekly(input_prefix, input_num):
     return bins
 
 
+import numpy as np
+
+def find_max_and_index(lst):
+    if lst.size == 0:  # Check if the array is empty
+        return None, None
+
+    max_item = np.max(lst)  # Find the maximum item
+    max_index = np.argmax(lst)  # Find the index of the maximum item
+
+    return max_item, max_index
+
+
+def contains_any(string, word_list):
+    return any(word in string for word in word_list)
+
+
+def highlight_words(sentence, words_to_highlight):
+    highlighted_sentence = []
+    for word in sentence.split():
+        if word in words_to_highlight:
+            highlighted_sentence.append('*' + word + '*')  # Highlight by surrounding with asterisks
+        else:
+            highlighted_sentence.append(word)
+    return ' '.join(highlighted_sentence)
+
+
 def get_topic_dist(bins, method, model_file, output_file):
     if method != 'CTM':
         # load LDA/NMF model
@@ -86,6 +112,36 @@ def get_topic_dist(bins, method, model_file, output_file):
             testing_dataset = tp.transform(text_for_contextual=texts)
             # n_sample how many times to sample the distribution (see the doc)
             doc_topic_dist = ctm.get_doc_topic_distribution(testing_dataset, n_samples=5)
+            if doc_topic_dist is not None:
+                for iii, listt in enumerate(doc_topic_dist):
+                    max_item, max_index = find_max_and_index(listt)
+                    tttt = texts[iii]
+                    if max_index == 0:
+                        t1_list = ['people', 'children', 'kids', 'covid', 'long', 'get', 'many', 'risk', 'vaccinated', 'deaths']
+                        if contains_any(tttt, t1_list):
+                            highlighted_text = highlight_words(tttt, t1_list)
+                            print("Topic1: " + highlighted_text)
+                    if max_index == 1:
+                        t2_list = ['day', 'feel', 'like', 'back', 'days', 'year', 'got', 'time', 'pain', 'last']
+                        if contains_any(tttt, t2_list):
+                            highlighted_text = highlight_words(tttt, t2_list)
+                            print("Topic2: " + highlighted_text)
+                    if max_index == 2:
+                        t3_list = ['symptoms', '19', 'covid', 'long', 'study', 'post', 'patients', 'term', 'infection', 'haulers']
+                        if contains_any(tttt, t3_list):
+                            highlighted_text = highlight_words(tttt, t3_list)
+                            print("Topic3: " + highlighted_text)
+                    if max_index == 3:
+                        t4_list = ['longcovid', 'mecfs', 'research', 'please', 'cfs', 'support', 'amp', 'pwme', 'help', 'thank']
+                        if contains_any(tttt, t4_list):
+                            highlighted_text = highlight_words(tttt, t4_list)
+                            print("Topic4: " + highlighted_text)
+                    if max_index == 4:
+                        t5_list = ['fewer', 'ontario', 'vast', 'matters', 'measure', 'amongst', 'likelihood', 'possibility', 'polio', 'contract']
+                        if contains_any(tttt, t5_list):
+                            highlighted_text = highlight_words(tttt, t5_list)
+                            print("Topic5: " + highlighted_text)
+
         else:
             print('wrong method:', method)
 
@@ -108,13 +164,13 @@ def run(input_prefix, input_num, method, model_file, output_file):
 
 
 if __name__ == '__main__':
-    input_loc = 'EU_UK'
+    input_loc = 'canada'
     input_prefix = 'tweets_%s_en' % input_loc  # _0.txt'
     method = 'CTM'
     model_loc = 'canada_us'
     model_file = '%s_%s_20.model' % (
     model_loc, method)  # model could be different from input e.g., doesn't need to be canada
     input_num = 12  # 5 files
-    output_file = 'time_%s_%s_%s.csv' % (input_loc, model_loc, method)
+    output_file = 'time_%s_%s_%sTTT.csv' % (input_loc, model_loc, method)
     model_file = 'contextualized_topic_model_nc_5_tpm_0.0_tpv_0.8_hs_prodLDA_ac_(100, 100)_do_softplus_lr_0.2_mo_0.002_rp_0.99'
     run(input_prefix, input_num, method, model_file, output_file)
