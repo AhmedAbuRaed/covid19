@@ -122,7 +122,7 @@ def create_network_graph(year_list, similarity_csv):
         ),
     )
 
-    return fig
+    return fig, G, pos, custom_node_text, edge_thickness
 
 
 # Streamlit app
@@ -133,15 +133,69 @@ region = st.selectbox("Select Region", ["Canada", "US", "EU/UK"])
 
 if region == "Canada":
     year_list = load_topics("visualization", "canada")
-    fig = create_network_graph(year_list, 'visualization/canada_topics_similaritiesWord2VecCosine.csv')
+    fig, G, pos, custom_node_text, edge_thickness = create_network_graph(year_list,
+                                                                         'visualization/canada_topics_similaritiesWord2VecCosine.csv')
     fig.update_layout(title="Canada Topics Network Graph")
 elif region == "US":
     year_list = load_topics("visualization", "us")
-    fig = create_network_graph(year_list, 'visualization/us_topics_similaritiesWord2VecCosine.csv')
+    fig, G, pos, custom_node_text, edge_thickness = create_network_graph(year_list,
+                                                                         'visualization/us_topics_similaritiesWord2VecCosine.csv')
     fig.update_layout(title="US Topics Network Graph")
 else:
     year_list = load_topics("visualization", "EU_UK")
-    fig = create_network_graph(year_list, 'visualization/EU_UK_topics_similaritiesWord2VecCosine.csv')
+    fig, G, pos, custom_node_text, edge_thickness = create_network_graph(year_list,
+                                                                         'visualization/EU_UK_topics_similaritiesWord2VecCosine.csv')
     fig.update_layout(title="EU/UK Topics Network Graph")
 
+# Display the initial graph
 st.plotly_chart(fig)
+
+# Interactive functionality
+click_event = st.button("Highlight Path")
+
+if click_event:
+    node = st.text_input("Enter Node (e.g., January Topic 1):")
+    if node:
+        neighbors = list(G.neighbors(node))
+        edge_x, edge_y = [], []
+        highlight_traces = []
+
+        # Define a list of colors
+        color_palette = ['#FF6633', '#FFB399', '#FF33FF', '#FFFF99', '#00B3E6',
+                         '#E6B333', '#3366E6', '#999966', '#99FF99', '#B34D4D']  # Add more colors as needed
+
+        # Dictionary to keep track of assigned colors
+        node_colors = {}
+
+        for neighbor in neighbors:
+            x0, y0 = pos[node]
+            x1, y1 = pos[neighbor]
+            edge_x.extend([x0, x1, None])
+            edge_y.extend([y0, y1, None])
+
+            # Get the original thickness from the dictionary
+            original_thickness = edge_thickness.get((node, neighbor), edge_thickness.get((neighbor, node), 2))
+
+            # Assign a new color from the palette and rotate the palette
+            if node not in node_colors:
+                node_colors[node] = color_palette.pop(0)
+                color_palette.append(node_colors[node])
+
+            # Create a highlight trace for each edge
+            highlight_trace = go.Scatter(
+                x=[x0, x1, None],
+                y=[y0, y1, None],
+                line=dict(width=original_thickness, color=node_colors[node]),
+                # Use original thickness for highlighted edges
+                hoverinfo='none',
+                mode='lines'
+            )
+            highlight_traces.append(highlight_trace)
+
+        # Add all highlight traces to the figure
+        if highlight_traces:
+            for trace in highlight_traces:
+                fig.add_trace(trace)
+
+        # Update the figure
+        st.plotly_chart(fig)
