@@ -2,7 +2,7 @@ import calendar
 import os
 from io import StringIO
 
-import dash  # Import dash
+import dash
 import networkx as nx
 import numpy as np
 import pandas as pd
@@ -152,9 +152,17 @@ def create_network_graph(year_list, similarity_csv_url):
     return fig, G, pos, edge_thickness
 
 
+def load_initial_data():
+    region = 'canada'  # Default region for initial load
+    year_list = load_topics(region)
+    similarity_csv = 'https://raw.githubusercontent.com/AhmedAbuRaed/covid19/main/visualization/canada_topics_similaritiesWord2VecCosine.csv'
+    fig, G, pos, edge_thickness = create_network_graph(year_list, similarity_csv)
+    return fig
+
+
 app.layout = html.Div([
     html.H1("Interactive Network Graph of Topics"),
-    html.Label("Region:"),
+    html.Label("Region:", style={'margin-right': '10px'}),
     dcc.Dropdown(
         id='region-dropdown',
         options=[
@@ -162,11 +170,12 @@ app.layout = html.Div([
             {'label': 'US', 'value': 'us'},
             {'label': 'EU/UK', 'value': 'EU_UK'}
         ],
-        value='canada'
+        value='canada',
+        style={'margin-bottom': '20px'}
     ),
-    dcc.Graph(id='network-graph'),
+    dcc.Graph(id='network-graph', figure=load_initial_data(), style={'margin-top': '20px'}),
     html.Div(id='clicked-data', style={'whiteSpace': 'pre-wrap', 'margin': '10px'})
-])
+], style={'padding': '20px'})
 
 
 @app.callback(
