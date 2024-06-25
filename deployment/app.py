@@ -1,13 +1,14 @@
 import calendar
+import os
+from io import StringIO
+
+import dash  # Import dash
 import networkx as nx
 import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
-import dash  # Import dash
-from dash import Dash, html, dcc, Output, Input, State
 import requests
-import os
-from io import StringIO
+from dash import Dash, html, dcc, Output, Input, State
 
 app = Dash(__name__)
 
@@ -22,11 +23,13 @@ edge_thickness = {}
 color_palette = ['#FF6633', '#FFB399', '#FF33FF', '#FFFF99', '#00B3E6',
                  '#E6B333', '#3366E6', '#999966', '#99FF99', '#B34D4D']
 
+
 # Function to read a file from GitHub
 def read_github_file(url):
     response = requests.get(url)
     response.raise_for_status()  # Ensure we notice bad responses
     return response.text
+
 
 # Function to load topics from GitHub
 def load_topics(region):
@@ -41,6 +44,7 @@ def load_topics(region):
         topics_list = eval(file_content)
         year_list.append(topics_list)
     return year_list
+
 
 # Function to create network graph
 def create_network_graph(year_list, similarity_csv_url):
@@ -100,9 +104,6 @@ def create_network_graph(year_list, similarity_csv_url):
         marker=dict(size=10, color="blue"),
     )
     traces.append(node_trace)
-
-    max_weight = max([edge[2]["weight"] for edge in G.edges(data=True)])
-    min_weight = min([edge[2]["weight"] for edge in G.edges(data=True)])
 
     for edge in G.edges(data=True):
         edge[2]["weight"] = np.exp(edge[2]["weight"])
