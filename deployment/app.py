@@ -3,6 +3,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
+import dash  # Import dash
 from dash import Dash, html, dcc, Output, Input, State
 import requests
 import os
@@ -168,48 +169,41 @@ app.layout = html.Div([
 
 
 @app.callback(
-    Output('network-graph', 'figure'),
-    [Input('region-dropdown', 'value')]
+    [Output('network-graph', 'figure'), Output('clicked-data', 'children')],
+    [Input('region-dropdown', 'value'), Input('network-graph', 'clickData')],
+    [State('network-graph', 'figure'), State('clicked-data', 'children')]
 )
-def update_graph(region):
-    year_list = load_topics(region)
-    if region == 'canada':
-        similarity_csv = 'https://raw.githubusercontent.com/AhmedAbuRaed/covid19/main/visualization/canada_topics_similaritiesWord2VecCosine.csv'
-    elif region == 'us':
-        similarity_csv = 'https://raw.githubusercontent.com/AhmedAbuRaed/covid19/main/visualization/us_topics_similaritiesWord2VecCosine.csv'
-    else:
-        similarity_csv = 'https://raw.githubusercontent.com/AhmedAbuRaed/covid19/main/visualization/EU_UK_topics_similaritiesWord2VecCosine.csv'
-    fig, G, pos, edge_thickness = create_network_graph(year_list, similarity_csv)
-    return fig
+def update_graph_and_display_click_data(region, clickData, current_fig, current_data):
+    global G, pos, edge_thickness, custom_node_text, node_colors
 
+    ctx = dash.callback_context
 
-@app.callback(
-    Output('clicked-data', 'children'),
-    [Input('network-graph', 'clickData')],
-    [State('clicked-data', 'children')]
-)
-def display_click_data(clickData, current_data):
-    if clickData:
+    if not ctx.triggered:
+        return dash.no_update, dash.no_update
+
+    triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
+
+    if triggered_id == 'region-dropdown':
+        year_list = load_topics(region)
+        if region == 'canada':
+            similarity_csv = 'https://raw.githubusercontent.com/AhmedAbuRaed/covid19/main/visualization/canada_topics_similaritiesWord2VecCosine.csv'
+        elif region == 'us':
+            similarity_csv = 'https://raw.githubusercontent.com/AhmedAbuRaed/covid19/main/visualization/us_topics_similaritiesWord2VecCosine.csv'
+        else:
+            similarity_csv = 'https://raw.githubusercontent.com/AhmedAbuRaed/covid19/main/visualization/EU_UK_topics_similaritiesWord2VecCosine.csv'
+        fig, G, pos, edge_thickness = create_network_graph(year_list, similarity_csv)
+        return fig, dash.no_update
+
+    if triggered_id == 'network-graph' and clickData:
         node_text = custom_node_text[clickData['points'][0]['pointIndex']].replace('<br>', '\n')
         new_node_div = html.Div(node_text,
                                 style={'margin-top': '5px', 'margin-bottom': '5px', 'display': 'inline-block',
                                        'margin-right': '10px'})
         if not current_data:
-            return [new_node_div]
+            current_data = [new_node_div]
         else:
-            return current_data + [new_node_div]
-    return current_data
+            current_data.append(new_node_div)
 
-
-@app.callback(
-    Output('network-graph', 'figure'),
-    [Input('network-graph', 'clickData')],
-    [State('network-graph', 'figure')]
-)
-def highlight_node_path(clickData, figure):
-    global pos, edge_thickness  # Ensure these are imported from the global scope
-
-    if clickData:
         if 'points' in clickData and len(clickData['points']) > 0:
             if 'text' in clickData['points'][0]:
                 clicked_node = clickData['points'][0]['text'].split('<br>')[0]
@@ -245,9 +239,11 @@ def highlight_node_path(clickData, figure):
 
                 # Add all highlight traces to the figure
                 if highlight_traces:
-                    figure['data'] += highlight_traces
+                    current_fig['data'] += highlight_traces
 
-    return figure
+        return current_fig, current_data
+
+    return dash.no_update, dash.no_update
 
 
 if __name__ == '__main__':
