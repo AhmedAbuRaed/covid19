@@ -6,19 +6,18 @@ import plotly.graph_objs as go
 import requests
 from dash import Dash, html, dcc, Output, Input, State
 from io import StringIO
+import os
 
 app = Dash(__name__)
 
 # Global variable to hold custom_node_text
 custom_node_text = []
 
-
 # Function to read a file from GitHub
 def read_github_file(url):
     response = requests.get(url)
     response.raise_for_status()  # Ensure we notice bad responses
     return response.text
-
 
 # Function to load topics from GitHub
 def load_topics(region):
@@ -33,7 +32,6 @@ def load_topics(region):
         topics_list = eval(file_content)
         year_list.append(topics_list)
     return year_list
-
 
 # Function to create network graph
 def create_network_graph(year_list, similarity_csv_url):
@@ -193,6 +191,5 @@ def display_click_data(clickData, current_data):
             return current_data + [new_node_div]
     return current_data
 
-
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(host='0.0.0.0', port=int(os.environ.get('PORT', 8050)), debug=True)
