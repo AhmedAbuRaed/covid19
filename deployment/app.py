@@ -3,15 +3,23 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
-import requests
 from dash import Dash, html, dcc, Output, Input, State
-from io import StringIO
+import requests
 import os
+from io import StringIO
 
 app = Dash(__name__)
 
-# Global variable to hold custom_node_text
+# Global variables to hold custom_node_text, node colors, and graph details
 custom_node_text = []
+node_colors = {}
+G = None
+pos = None
+edge_thickness = {}
+
+# Define a list of colors for highlighting
+color_palette = ['#FF6633', '#FFB399', '#FF33FF', '#FFFF99', '#00B3E6',
+                 '#E6B333', '#3366E6', '#999966', '#99FF99', '#B34D4D']
 
 # Function to read a file from GitHub
 def read_github_file(url):
@@ -35,7 +43,7 @@ def load_topics(region):
 
 # Function to create network graph
 def create_network_graph(year_list, similarity_csv_url):
-    global custom_node_text
+    global custom_node_text, G, pos, edge_thickness
     csv_content = read_github_file(similarity_csv_url)
     df = pd.read_csv(StringIO(csv_content), names=['Month', 'TopicA', 'TopicB', 'similarity'])
 
@@ -144,6 +152,7 @@ def create_network_graph(year_list, similarity_csv_url):
 
 app.layout = html.Div([
     html.H1("Interactive Network Graph of Topics"),
+    html.Label("Region:"),
     dcc.Dropdown(
         id='region-dropdown',
         options=[
@@ -190,6 +199,56 @@ def display_click_data(clickData, current_data):
         else:
             return current_data + [new_node_div]
     return current_data
+
+
+@app.callback(
+    Output('network-graph', 'figure'),
+    [Input('network-graph', 'clickData')],
+    [State('network-graph', 'figure')]
+)
+def highlight_node_path(clickData, figure):
+    global pos, edge_thickness  # Ensure these are imported from the global scope
+
+    if clickData:
+        if 'points' in clickData and len(clickData['points']) > 0:
+            if 'text' in clickData['points'][0]:
+                clicked_node = clickData['points'][0]['text'].split('<br>')[0]
+                neighbors = list(G.neighbors(clicked_node))  # Get immediate neighbors of the clicked node
+
+                if clicked_node not in node_colors:
+                    # Assign a new color from the palette and rotate the palette
+                    node_colors[clicked_node] = color_palette.pop(0)
+                    color_palette.append(node_colors[clicked_node])
+
+                edge_x, edge_y = [], []
+                highlight_traces = []
+                for neighbor in neighbors:
+                    x0, y0 = pos[clicked_node]
+                    x1, y1 = pos[neighbor]
+                    edge_x.extend([x0, x1, None])
+                    edge_y.extend([y0, y1, None])
+
+                    # Get the original thickness from the dictionary
+                    original_thickness = edge_thickness.get((clicked_node, neighbor),
+                                                            edge_thickness.get((neighbor, clicked_node), 2))
+
+                    # Create a highlight trace for each edge
+                    highlight_trace = go.Scatter(
+                        x=[x0, x1, None],
+                        y=[y0, y1, None],
+                        line=dict(width=original_thickness, color=node_colors[clicked_node]),
+                        # Use original thickness for highlighted edges
+                        hoverinfo='none',
+                        mode='lines'
+                    )
+                    highlight_traces.append(highlight_trace)
+
+                # Add all highlight traces to the figure
+                if highlight_traces:
+                    figure['data'] += highlight_traces
+
+    return figure
+
 
 if __name__ == '__main__':
     app.run_server(host='0.0.0.0', port=int(os.environ.get('PORT', 8050)), debug=True)
