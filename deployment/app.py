@@ -91,7 +91,7 @@ def create_network_graph(year_list, similarity_csv_url):
                 topics = year_list[i]
                 topic = topics[int(node.split()[2]) - 1]
                 topic = topic[:10]
-                custom_text = f"{node}<br>Keywords:<br>" + '<br>'.join(topic)
+                custom_text = f"<em>{node}</em>:<br>" + '<br>'.join(topic)
                 custom_node_text.append(custom_text)
 
     traces = []
