@@ -1,13 +1,2 @@
-This repository contains scripts used for Hyeju Jang's COVID-19 paper that analyzes COVID-19 related tweets: https://www.jmir.org/2021/2/e25431/
-
-The tweets used for this study are from Chen et al., 2020 (https://publichealth.jmir.org/2020/2/e19273). They have a github repository, and you can download the tweets using their scripts.
-
-The scripts are not organized as follows.
-
-* data_statistics: scripts to count frequencies of tweets per certain condition, e.g., location
-* Preprocessing: scripts to prepare data by filtering out non-canada, non-us, and non-english.
-* topic_modeling: scripts to build a topic model using LDA/NMF, and get topic distributions per location and time(weekly)
-* sentiment_analysis: scripts to do inference of sentiments using ABSApp. Training should be done following the instructions on the ABSApp website.
-
-Warning: You need to check input, output, and hardcoded values.
+Long Covid ------- to be updated
 
